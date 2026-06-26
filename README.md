@@ -2,7 +2,7 @@
 
 A clean, animated personal portfolio website built from scratch with pure HTML, CSS, and JavaScript. Designed to showcase projects, skills, experience, and personality — with a polished UI, smooth scroll interactions, and a custom cursor effect.
 
-🔴 **Live:** [your-portfolio-link.vercel.app](https://your-portfolio-link.vercel.app)  
+🔴 **Live:** [your-portfolio-link.vercel.app]([Shobhit_Arora](https://shobhitarora.vercel.app/))  
 📄 **Resume:** [View Resume](https://drive.google.com/file/d/11BVAWT3Tzd4HmV-UFhFLzpYIYlLRpn6n/view?usp=sharing)
 
 ---
