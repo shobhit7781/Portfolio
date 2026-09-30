@@ -49,37 +49,6 @@ body { width:100%; overflow-x: hidden; }
   outline-offset: 2px;
 }
 
-.project-card{
-  display:flex;
-  flex-direction:column;
-  min-height:360px;
-}
-
-.project-body{
-  padding:1.5rem;
-  display:flex;
-  flex-direction:column;
-  flex:1;
-}
-
-.project-title{
-  font-family:var(--font-display);
-  font-size:18px;
-  font-weight:700;
-  margin-bottom:0.7rem;
-}
-
-.project-footer{
-  margin-top:auto;
-}
-
-.project-stack{
-  margin-top:auto;
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-}
-
 body {
   font-family: var(--font-body);
   background: var(--c-bg);
@@ -88,7 +57,7 @@ body {
 }
 
 /* ── Flat card surface ── replaces glassmorphism-as-default; the nav below is the system's one deliberate glass moment */
-.glass {
+.card-flat {
   background: var(--c-bg);
   border: 1px solid var(--c-border);
   border-radius: var(--radius-card);
@@ -149,6 +118,30 @@ nav {
   white-space: nowrap;
   transition: box-shadow 0.3s;
 }
+
+/* Telemetry scroll-progress bar — native CSS scroll-driven animation, no JS.
+   Decorative only: unsupported browsers just never scale past 0, so it's invisible
+   rather than broken (per @supports, belt-and-suspenders). */
+.scroll-progress {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 2.5px;
+  background: var(--c-primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  z-index: 1000;
+  pointer-events: none;
+}
+@supports (animation-timeline: scroll()) {
+  .scroll-progress {
+    animation: scroll-progress-fill linear;
+    animation-timeline: scroll(root);
+  }
+}
+@keyframes scroll-progress-fill {
+  to { transform: scaleX(1); }
+}
+
 /* EDIT: your initials */
 .nav-logo {
   font-family: var(--font-display);
@@ -250,6 +243,7 @@ nav {
 
 /* ── Layout helpers ── */
 .page-section { max-width:1080px; margin:0 auto; padding:6rem 1.5rem; }
+.page-section-tight { padding-top:0; }
 .section-heading {
   font-family: var(--font-display);
   font-size: clamp(28px,4vw,42px);
@@ -271,7 +265,6 @@ nav {
 /* ── Hero load choreography ── the one signature entrance; fires once via
    #hero.hero-ready (added in JS at the same moment the loader fades out),
    not on scroll — the hero is already in view, so a scroll-reveal doesn't apply. */
-.js #hero .hero-pill,
 .js #hero .hero-name,
 .js #hero .hero-sub,
 .js #hero .hero-ctas {
@@ -284,14 +277,12 @@ nav {
   transform: translateY(14px);
   transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo);
 }
-#hero.hero-ready .hero-pill  { transition-delay: 0.05s; }
-#hero.hero-ready .hero-name  { transition-delay: 0.14s; }
-#hero.hero-ready .hero-sub   { transition-delay: 0.28s; }
-#hero.hero-ready .hero-ctas  { transition-delay: 0.4s; }
-#hero.hero-ready .hero-stats > *:nth-child(1) { transition-delay: 0.52s; }
-#hero.hero-ready .hero-stats > *:nth-child(2) { transition-delay: 0.6s; }
-#hero.hero-ready .hero-stats > *:nth-child(3) { transition-delay: 0.68s; }
-#hero.hero-ready .hero-pill,
+#hero.hero-ready .hero-name  { transition-delay: 0s; }
+#hero.hero-ready .hero-sub   { transition-delay: 0.14s; }
+#hero.hero-ready .hero-ctas  { transition-delay: 0.26s; }
+#hero.hero-ready .hero-stats > *:nth-child(1) { transition-delay: 0.38s; }
+#hero.hero-ready .hero-stats > *:nth-child(2) { transition-delay: 0.46s; }
+#hero.hero-ready .hero-stats > *:nth-child(3) { transition-delay: 0.54s; }
 #hero.hero-ready .hero-name,
 #hero.hero-ready .hero-sub,
 #hero.hero-ready .hero-ctas,
@@ -300,25 +291,6 @@ nav {
   transform: translateY(0);
 }
 
-.hero-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12px; font-weight: 500;
-  padding: 6px 16px; border-radius: var(--radius-pill);
-  background: rgba(193,57,43,0.08);
-  border: 1px solid rgba(193,57,43,0.22);
-  color: var(--c-primary); margin-bottom: 2rem;
-}
-.hero-pill .dot-live {
-  width:8px; height:8px; border-radius:50%;
-  background: var(--c-primary);
-  animation: pulse 1.8s ease-in-out infinite;
-  box-shadow: 0 0 0 0 rgba(193,57,43,0.5);
-}
-@keyframes pulse {
-  0%   { opacity:1; transform:scale(1);   box-shadow: 0 0 0 0 rgba(193,57,43,0.5); }
-  60%  { opacity:1; transform:scale(1.1); box-shadow: 0 0 0 6px rgba(193,57,43,0); }
-  100% { opacity:1; transform:scale(1);   box-shadow: 0 0 0 0 rgba(193,57,43,0); }
-}
 /* EDIT: your name */
 .hero-name {
   font-family: var(--font-display);
@@ -327,8 +299,7 @@ nav {
   line-height: 0.98; color: var(--c-ink);
   margin-bottom: 1.5rem;
 }
-.hero-name .accent-purple,
-.hero-name .accent-pink { color: var(--c-primary); }
+.accent-word { color: var(--c-primary); }
 
 .hero-sub {
   font-size: 18px; color: var(--c-muted);
@@ -366,9 +337,8 @@ nav {
   font-family: var(--font-display);
   font-size: 36px; font-weight: 800; letter-spacing: -1px;
 }
-.hero-stat-num.col-purple { color: var(--c-primary); }
-.hero-stat-num.col-pink,
-.hero-stat-num.col-teal   { color: var(--c-ink); }
+.hero-stat-num.stat-accent  { color: var(--c-primary); }
+.hero-stat-num.stat-neutral { color: var(--c-ink); }
 .hero-stat-label { font-size:12px; color:var(--c-muted); margin-top:2px; }
 
 /* ── About ── */
@@ -447,20 +417,15 @@ nav {
 .aql-item {
   transition: opacity 0.6s ease, transform 0.18s ease, box-shadow 0.18s ease !important;
 }
-.skill-card:hover,
-.cert-card:hover,
-.project-card:hover,
 .exp-card:hover,
 .ec-card:hover,
 .aql-item:hover {
   transform: translateY(-3px) !important;
   box-shadow: 0 8px 24px rgba(36,26,23,0.10) !important;
 }
+/* skill-card / cert-card / project-card hover feedback is JS-driven (3D tilt) — see script.js */
 
 /* ── Skills ── */
-#skills .skills-grid {
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem;
-}
 .skill-card { padding:1.5rem; min-height: 180px; }
 /* Category color: a quiet 5-6% wash per card (never a side-stripe), consistent with the
    same taxonomy used on project badges below — Languages/Data&Analytics/Product&Ops/Tools&Platforms. */
@@ -522,8 +487,8 @@ nav {
   grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
   gap:1.25rem;
 }
-.project-card { padding:0; overflow:hidden; display:flex; flex-direction:column; }
-.project-body { padding:1.25rem 1.5rem 1rem; flex: 1; }
+.project-card { padding:0; overflow:hidden; display:flex; flex-direction:column; min-height:360px; }
+.project-body { padding:1.25rem 1.5rem 1rem; display:flex; flex-direction:column; flex: 1; }
 .project-type-badge {
   display:inline-block; font-size:10px; font-weight:700; letter-spacing:1.5px;
   text-transform:uppercase; padding:3px 10px; border-radius:var(--radius-pill); margin-bottom:0.6rem;
@@ -537,12 +502,13 @@ nav {
 .badge-tools   { background: rgba(209,144,47,0.16);  color: var(--c-tools); }
 .project-title { font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--c-ink); margin-bottom:0.5rem; letter-spacing:-0.3px; }
 .project-desc { font-size:13px; color:var(--c-muted); line-height:1.65; margin-bottom:1rem; }
-.project-stack { display:flex; flex-wrap:wrap; gap:6px; }
+.project-stack { display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; }
 .stack-tag { font-size:11px; padding:3px 9px; border-radius:6px; background:var(--c-surface); color:var(--c-muted); font-weight:500; }
 .project-footer {
   display:flex; align-items:center; gap: 8px; flex-wrap: wrap;
   padding:0.75rem 1.5rem 1.25rem;
   border-top:1px solid var(--c-border);
+  margin-top:auto;
 }
 /* Crimson strip marks a project with a live demo — a meaningful signal, not decoration */
 .project-card:has(.project-live-link) {
@@ -607,6 +573,7 @@ nav {
 .exp-card {
   position: relative;
   margin-bottom: 1.25rem;
+  padding: 1.75rem 2rem;
 }
 .exp-card::before {
   content: '';
@@ -620,7 +587,6 @@ nav {
   z-index: 1;
 }
 .exp-card:nth-child(even)::before { background: var(--c-accent); box-shadow: 0 0 0 2px var(--c-accent); }
-.exp-card { padding:1.75rem 2rem; }
 .exp-top { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:0.75rem; }
 .exp-role { font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--c-ink); letter-spacing:-0.3px; }
 .exp-company { font-size:14px; color:var(--c-muted); font-weight:500; margin-top:3px; }
@@ -681,7 +647,6 @@ nav {
   font-family:var(--font-display); font-size:clamp(32px,5vw,56px);
   font-weight:800; letter-spacing:-1.5px; color:var(--c-ink); line-height:1; margin-bottom:1rem;
 }
-.contact-heading .grad { color: var(--c-primary); }
 .contact-sub { font-size:15px; color:var(--c-muted); margin-bottom:2rem; line-height:1.7; }
 .contact-links { display:flex; flex-direction:column; gap:10px; text-align:left; }
 .contact-link {
@@ -698,9 +663,8 @@ nav {
   display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;
   background: var(--c-surface);
 }
-.ci-purple, .ci-green, .ci-blue, .ci-dark { background: var(--c-surface); }
-.contact-link-detail { display:flex; flex-direction:column; }
-.contact-link-label { font-size:11px; color:var(--c-muted); margin-top:1px; font-weight:400; }
+.contact-link-detail { display:flex; flex-direction:column; min-width:0; }
+.contact-link-label { font-size:11px; color:var(--c-muted); margin-top:1px; font-weight:400; overflow-wrap:break-word; }
 
 /* ── Footer ── flat, no glass */
 footer {
@@ -798,7 +762,7 @@ footer {
 body::after {
   content: '';
   position: fixed; inset: 0;
-  pointer-events: none; z-index: 9999;
+  pointer-events: none; z-index: 10000;
   opacity: 0.02;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-repeat: repeat;
@@ -819,7 +783,8 @@ body::after {
   width: max-content;
   animation: ticker-scroll 28s linear infinite;
 }
-.ticker-track:hover { animation-play-state: paused; }
+.ticker-track:hover,
+.ticker-track.paused { animation-play-state: paused; }
 .ticker-item {
   display: inline-flex; align-items: center; gap: 8px;
   font-size: 13px; font-weight: 500; color: var(--c-muted);
@@ -835,7 +800,6 @@ body::after {
   100% { transform: translateX(-50%); }
 }
 
-.section-heading .grad-word { color: var(--c-primary); }
 
 /* ── Asymmetric skills grid ── */
 #skills .skills-grid {

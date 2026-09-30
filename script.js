@@ -25,15 +25,42 @@ if (document.readyState === 'complete') {
 }
 
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  const initialTarget = window.location.hash ? document.getElementById(window.location.hash.slice(1)) : null;
+  if (initialTarget) {
+    window.scrollTo({ top: initialTarget.offsetTop - 80, behavior: 'auto' });
+  } else {
+    window.scrollTo(0, 0);
+  }
   if (window.location.hash) history.replaceState(null, '', window.location.pathname + window.location.search);
-  window.scrollTo(0, 0);
+
+  // :hover alone never pauses the ticker on touch devices — give them a tap-to-pause equivalent.
+  const tickerStrip = document.querySelector('.ticker-strip');
+  const tickerTrack = document.querySelector('.ticker-track');
+  if (tickerStrip && tickerTrack) {
+    tickerStrip.addEventListener('click', () => tickerTrack.classList.toggle('paused'));
+  }
 
   const hamburger  = document.getElementById('hamburger');
   const mobileMenu = document.getElementById('mobile-menu');
+  function closeMobileMenu() {
+    mobileMenu.classList.remove('open');
+    hamburger.classList.remove('open');
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
   hamburger.addEventListener('click', () => {
     const open = hamburger.classList.toggle('open');
     mobileMenu.classList.toggle('open', open);
     hamburger.setAttribute('aria-expanded', String(open));
+  });
+  // Tapping outside the open panel, or pressing Escape, should close it —
+  // the hamburger toggle was previously the only way out.
+  document.addEventListener('click', (e) => {
+    if (!mobileMenu.classList.contains('open')) return;
+    if (mobileMenu.contains(e.target) || hamburger.contains(e.target)) return;
+    closeMobileMenu();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && mobileMenu.classList.contains('open')) closeMobileMenu();
   });
 
   function scrollToSection(id) {
@@ -49,10 +76,7 @@ if (document.readyState === 'complete') {
       if (!id) return;
       e.preventDefault();
       scrollToSection(id);
-      // close mobile menu if open
-      mobileMenu.classList.remove('open');
-      hamburger.classList.remove('open');
-      hamburger.setAttribute('aria-expanded', 'false');
+      closeMobileMenu();
     });
   });
 
@@ -117,16 +141,15 @@ if (document.readyState === 'complete') {
   // startDelay mirrors the CSS transition-delay on .hero-stats > * (#hero.hero-ready rules)
   // so the counting motion is visible as each number fades in, instead of finishing while still hidden.
   const statDefs = [
-    { selector: '.col-purple', target: 6,    suffix: '+',    startDelay: 520 },
-    { selector: '.col-pink',   target: 8,    suffix: 'mo+',  startDelay: 600 },
-    { selector: '.col-teal',   target: 99.6, suffix: '',     startDelay: 680 },
+    { stat: 'projects', target: 6,    suffix: '+', startDelay: 520 },
+    { stat: 'jee',       target: 99.6, suffix: '',  startDelay: 680 },
   ];
   let statsAnimated = false;
   const statsObserver = new IntersectionObserver(entries => {
     if (!entries[0].isIntersecting || statsAnimated) return;
     statsAnimated = true;
-    statDefs.forEach(({ selector, target, suffix, startDelay }) => {
-      const el = document.querySelector(`.hero-stat-num${selector}`);
+    statDefs.forEach(({ stat, target, suffix, startDelay }) => {
+      const el = document.querySelector(`.hero-stat-num[data-stat="${stat}"]`);
       if (el) setTimeout(() => countUp(el, target, suffix, 1200), prefersReducedMotion ? 0 : startDelay);
     });
   }, { threshold: 0.5 });
@@ -143,3 +166,36 @@ if (document.readyState === 'complete') {
     });
   }, { threshold: 0.12 });
   revealEls.forEach(el => observer.observe(el));
+
+  // Magnetic pull + 3D tilt are cursor-driven, not autoplaying, but "hover near" doesn't
+  // mean anything on touch — skip both for reduced-motion and coarse/no-hover pointers.
+  const hasFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (!prefersReducedMotion && hasFinePointer) {
+    const maxPull = 10; // px
+    document.querySelectorAll('.hero-ctas .btn').forEach(btn => {
+      btn.addEventListener('mousemove', (e) => {
+        const rect = btn.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width - 0.5) * maxPull * 2;
+        const y = ((e.clientY - rect.top) / rect.height - 0.5) * maxPull * 2;
+        btn.style.transform = `translate(${x}px, ${y}px)`;
+      });
+      btn.addEventListener('mouseleave', () => { btn.style.transform = ''; });
+    });
+
+    const maxTilt = 6; // degrees
+    document.querySelectorAll('.project-card, .cert-card, .skill-card').forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const px = (e.clientX - rect.left) / rect.width;
+        const py = (e.clientY - rect.top) / rect.height;
+        const rotateY = (px - 0.5) * maxTilt * 2;
+        const rotateX = (0.5 - py) * maxTilt * 2;
+        card.style.transform = `perspective(700px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-3px)`;
+        card.style.boxShadow = '0 8px 24px rgba(36,26,23,0.10)';
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = '';
+        card.style.boxShadow = '';
+      });
+    });
+  }
